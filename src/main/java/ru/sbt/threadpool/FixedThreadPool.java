@@ -7,6 +7,7 @@ public class FixedThreadPool implements ThreadPool {
     private final Queue<Runnable> tasks = new ArrayDeque<>();
     private final int threadCount;
     private final Worker[] workers;
+    private volatile boolean isRunning = true;
 
     public FixedThreadPool(int threadCount) {
         this.threadCount = threadCount;
@@ -29,22 +30,31 @@ public class FixedThreadPool implements ThreadPool {
         }
     }
 
+    @Override
+    public void terminate() {
+        isRunning = false;
+        for (Worker worker : workers) {
+            worker.interrupt();
+        }
+    }
+
     private class Worker extends Thread {
         @Override
         public void run() {
             Runnable task;
-            while (true) {
+            while (isRunning) {
                 synchronized (tasks) {
                     while (tasks.isEmpty()) {
                         try {
                             tasks.wait();
                         } catch (InterruptedException ignore) {
+                            if (!isRunning) return;
                         }
                     }
                     task = tasks.poll();
                 }
                 try {
-                    task.run(); // handle exception
+                    task.run();
                 } catch (RuntimeException e) {
                     throw new ThreadPoolException("Exception for method tasks.run()", e);
                 }

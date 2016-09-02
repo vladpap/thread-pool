@@ -14,8 +14,7 @@ public class Factorial implements Runnable {
             result += result * j;
             try {
                 Thread.sleep(500);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            } catch (InterruptedException ignore) {
             }
         }
         System.out.println("Result " + fact + " = " + result);
